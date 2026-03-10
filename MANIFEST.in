@@ -1,0 +1,2 @@
+recursive-include nettrace/datasets *
+global-exclude .DS_Store
