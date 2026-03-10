@@ -13,12 +13,19 @@ A **batteries-included, zero-dependency** network bandwidth trace loader designe
 
 ## Installation
 
-```bash
-# Editable install (recommended for development)
-pip install -e .
+**Install directly from GitHub (recommended):**
 
-# With test dependencies
-pip install -e ".[dev]"
+```bash
+pip install git+https://github.com/Systems-Intelligent-Lab/nettrace.git
+```
+
+**Clone and install locally (for development):**
+
+```bash
+git clone https://github.com/Systems-Intelligent-Lab/nettrace.git
+cd nettrace
+pip install -e .          # runtime only
+pip install -e ".[dev]"   # with test dependencies
 ```
 
 > **Note:** If you switch between Python environments (e.g. conda envs), run the install command inside each environment and use that environment's `python` to run scripts.

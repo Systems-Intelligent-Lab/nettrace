@@ -13,12 +13,19 @@
 
 ## 安装
 
-```bash
-# 本地开发（可编辑安装，推荐）
-pip install -e .
+**直接从 GitHub 安装（推荐）：**
 
-# 含测试依赖
-pip install -e ".[dev]"
+```bash
+pip install git+https://github.com/Systems-Intelligent-Lab/nettrace.git
+```
+
+**克隆后本地安装（用于开发）：**
+
+```bash
+git clone https://github.com/Systems-Intelligent-Lab/nettrace.git
+cd nettrace
+pip install -e .           # 仅运行时依赖
+pip install -e ".[dev]"    # 含测试依赖
 ```
 
 > **注意**：如果你在多个 Python 环境（如 conda env）之间切换，需要在每个环境里分别执行安装命令，然后用该环境的 `python` 运行脚本。
