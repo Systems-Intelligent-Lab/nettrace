@@ -1,50 +1,52 @@
 # nettrace
 
-`nettrace` 是一个**自带数据集、零外部依赖**的网络带宽 trace 加载工具包，专为 ABR 自适应码率、网络仿真等研究场景设计。
+**[English]** | [中文文档 README_zh.md](README_zh.md)
 
-核心特性：
-- **内置 ABRBench 数据集**：12 个 trace 集合（3G/4G+/WiFi），2 种视频 chunk 元数据
-- **可复现采样**：文件列表按文件名排序 + `random.Random(seed)`，seed 相同则每次拿到同一条 trace
-- **纯标准库**：运行时无任何第三方依赖，直接 `pip install`
+A **batteries-included, zero-dependency** network bandwidth trace loader designed for ABR (Adaptive Bitrate) streaming research and network simulation.
+
+**Key features:**
+- **Bundled ABRBench datasets** — 12 trace collections (3G / 4G+ / Wi-Fi) and 2 video chunk-size datasets, all shipped inside the package
+- **Reproducible sampling** — file list sorted by name + `random.Random(seed)`, so the same seed always returns the same trace
+- **Pure standard library** — no third-party runtime dependencies; just `pip install`
 
 ---
 
-## 安装
+## Installation
 
 ```bash
-# 本地开发（可编辑安装，推荐）
+# Editable install (recommended for development)
 pip install -e .
 
-# 含测试依赖
+# With test dependencies
 pip install -e ".[dev]"
 ```
 
-> **注意**：如果你在多个 Python 环境（如 conda env）之间切换，需要在每个环境里分别执行安装命令，然后用该环境的 `python` 运行脚本。
+> **Note:** If you switch between Python environments (e.g. conda envs), run the install command inside each environment and use that environment's `python` to run scripts.
 
 ---
 
-## 快速开始
+## Quick Start
 
 ```python
 from nettrace import list_trace_sets, list_trace_files, load_trace_file, sample_trace, load_video_sizes
 
-# 查看所有可用 trace 集合
+# List all available trace collections
 print(list_trace_sets("ABRBench-4G+"))
 # ['Ghent', 'Lab', 'Lumos4G', 'Lumos5G', 'Norway3G', 'SolisWi-Fi']
 
-# 随机采样一条 trace（seed 保证可复现）
+# Sample one trace reproducibly
 trace = sample_trace("SolisWi-Fi", suite="ABRBench-4G+", split="train", seed=42)
-print(trace.path.name)          # wifi_lab_231114-162511.txt（seed=42 固定）
-print(len(trace.times))         # 200
-print(trace.bandwidths[:3])     # (30.6, 13.4, 13.4)
+print(trace.path.name)       # wifi_lab_231114-162511.txt  (fixed for seed=42)
+print(len(trace.times))      # 200
+print(trace.bandwidths[:3])  # (30.6, 13.4, 13.4)
 
-# 加载视频 chunk 大小（每个码率层）
+# Load video chunk sizes for each bitrate level
 sizes = load_video_sizes("big_buck_bunny", bitrate_levels=6)
 print([round(sum(sizes[i]) / len(sizes[i]) / 1024) for i in range(6)])
-# [483, 1210, 2412, 3867, 7734, 19272]  (KB，码率越高 chunk 越大)
+# [483, 1210, 2412, 3867, 7734, 19272]  KB — higher bitrate → larger chunks
 ```
 
-运行完整示例：
+Run the bundled example:
 
 ```bash
 python examples/quickstart.py
@@ -52,11 +54,11 @@ python examples/quickstart.py
 
 ---
 
-## 数据集
+## Datasets
 
-### Trace 数据集
+### Network Traces
 
-| Suite | 集合 | Split | 文件数 |
+| Suite | Collection | Split | Files |
 |---|---|---|---|
 | ABRBench-3G | FCC-16 | train / test | 269 |
 | ABRBench-3G | FCC-18 | train / test | 400 |
@@ -71,9 +73,9 @@ python examples/quickstart.py
 | ABRBench-4G+ | Norway3G | train / test | 134 |
 | ABRBench-4G+ | SolisWi-Fi | train / test | 80 |
 
-> HSR、Ghent、Lab 无 train/test 划分，使用时 `split="all"`。
+> HSR, Ghent, and Lab have no train/test split — use `split="all"` for these.
 
-每条 trace 文件格式（空格分隔的两列）：
+Each trace file contains two whitespace-separated columns:
 
 ```
 0.0  25.5
@@ -82,24 +84,24 @@ python examples/quickstart.py
 ...
 ```
 
-第一列为时间戳（秒），第二列为带宽（Mbps）。
+Column 1: timestamp (seconds) · Column 2: bandwidth (Mbps)
 
-### 视频元数据
+### Video Chunk Metadata
 
-| 视频 | 码率层数 | Chunk 数 |
+| Video | Bitrate levels | Chunks per level |
 |---|---|---|
 | `big_buck_bunny` | 6 | 49 |
 | `envivio_3g` | 6 | 49 |
 
-码率档位：300 / 750 / 1200 / 1850 / 2850 / 4300 Kbps
+Bitrate ladder: 300 / 750 / 1200 / 1850 / 2850 / 4300 Kbps
 
 ---
 
-## API
+## API Reference
 
 ### `list_trace_sets(suite) -> list[str]`
 
-列出指定 suite 下所有 trace 集合名（已排序）。
+Return a sorted list of all collection names under the given suite.
 
 ```python
 list_trace_sets("ABRBench-3G")   # ['FCC-16', 'FCC-18', 'HSR', ...]
@@ -108,7 +110,7 @@ list_trace_sets("ABRBench-4G+")  # ['Ghent', 'Lab', 'Lumos4G', ...]
 
 ### `list_trace_files(trace_set, *, suite, split) -> list[Path]`
 
-列出某个集合下某个 split 的所有 trace 文件路径（**按文件名排序**，顺序稳定）。
+Return all trace file paths in a collection/split, **sorted by filename** for a stable, deterministic order.
 
 ```python
 files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
@@ -116,11 +118,11 @@ files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
 
 ### `load_trace_file(path) -> Trace`
 
-解析单个 trace 文件，返回 `Trace` 对象。
+Parse a single two-column trace file and return a `Trace` object.
 
 ### `sample_trace(trace_set, *, suite, split, seed) -> Trace`
 
-从 trace 集合中**可复现地随机采样**一条 trace 并加载。
+Reproducibly sample and load one trace from a collection.
 
 ```python
 trace = sample_trace("FCC-16", suite="ABRBench-3G", split="test", seed=0)
@@ -128,86 +130,105 @@ trace = sample_trace("FCC-16", suite="ABRBench-3G", split="test", seed=0)
 
 ### `load_video_sizes(video_type, *, bitrate_levels) -> dict[int, tuple[int, ...]]`
 
-加载视频 chunk 大小（字节），按码率层索引。
+Load per-chunk byte sizes for every bitrate level.
 
 ```python
 sizes = load_video_sizes("envivio_3g", bitrate_levels=6)
-sizes[0]  # level 0 的所有 chunk 大小
+sizes[0]   # chunk sizes (bytes) for level 0
 ```
 
-### `Trace`（dataclass）
+### `Trace` (frozen dataclass)
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Description |
 |---|---|---|
-| `times` | `tuple[float, ...]` | 时间戳序列（秒） |
-| `bandwidths` | `tuple[float, ...]` | 带宽序列（Mbps） |
-| `path` | `pathlib.Path` | 原始文件绝对路径 |
+| `times` | `tuple[float, ...]` | Timestamp sequence (seconds) |
+| `bandwidths` | `tuple[float, ...]` | Bandwidth sequence (Mbps) |
+| `path` | `pathlib.Path` | Absolute path to the source file |
 
 ---
 
-## 可复现性
+## Reproducibility
 
-`sample_trace(..., seed=SEED)` 的复现保证：
+`sample_trace(..., seed=SEED)` guarantees reproducibility via two invariants:
 
-1. `list_trace_files` 返回的文件列表**按文件名字母序排列**（不依赖文件系统顺序）
-2. 用 `random.Random(seed)` 从该列表中取索引
+1. `list_trace_files` always returns files **sorted alphabetically by filename** — independent of filesystem ordering
+2. A `random.Random(seed)` instance is used to pick the index from that sorted list
 
-因此只要数据集内容不变，**同一 seed 始终选中同一文件、读出同一 trace**。
-
----
-
-## 示例：在 gym 环境中使用
-
-`examples/env.py` 提供了一个完整的 ABR 视频流 gym 环境示例，展示如何将 `nettrace` 作为数据后端：
+As long as the dataset content is unchanged, **the same seed always selects the same file and produces the same trace**.
 
 ```python
-# examples/env.py 中的加载方式
+t1 = sample_trace("SolisWi-Fi", suite="ABRBench-4G+", split="train", seed=42)
+t2 = sample_trace("SolisWi-Fi", suite="ABRBench-4G+", split="train", seed=42)
+assert t1.path == t2.path            # same file
+assert t1.bandwidths == t2.bandwidths  # same content
+```
+
+---
+
+## Example: Using nettrace in a Gym Environment
+
+`examples/env.py` provides a complete ABR video-streaming Gym environment that uses `nettrace` as its data backend:
+
+```python
 from nettrace import list_trace_files, load_trace_file, load_video_sizes
 
-# 批量加载所有 trace（env 内部使用）
+# Load all traces for an episode pool
 files = list_trace_files(trace_name, suite=suite, split=data_split)
 for f in files:
     trace = load_trace_file(f)
     time_seqs.append(list(trace.times))
     bw_seqs.append(list(trace.bandwidths))
 
-# 加载视频 chunk 大小
+# Load video chunk sizes
 sizes = load_video_sizes(video_type, bitrate_levels=6)
 ```
 
-运行 debug 示例（需在对应 conda 环境中安装 `gymnasium` 和 `numpy`）：
+Run the debug demo (requires `gymnasium` and `numpy` in your environment):
 
 ```bash
 python examples/env.py
 ```
 
+Sample output:
+
+```
+[reset  ]  delay=  227.1ms  rebuf= 227.1ms  buf=  4.0s  remain=47  chunk=  134KB
+[step  1]  delay= 2233.8ms  rebuf=   0.0ms  buf=  5.8s  remain=46  chunk= 1822KB  reward=+0.7500
+[step  2]  delay= 3239.1ms  rebuf=   0.0ms  buf=  6.5s  remain=45  chunk= 2748KB  reward=+1.2000
+...
+Episode ended — total reward: 55.95  |  rebuffer: 0.000 s
+✓ Reproducibility check passed
+```
+
 ---
 
-## 测试
+## Tests
 
 ```bash
 pytest
 ```
 
-测试覆盖：
-- 所有 trace 集合可列出且顺序稳定
-- 文件列表跨调用结果一致
-- trace 文件正确解析（时间非负、带宽为正、双列等长）
-- 批量加载所有文件无报错
-- video sizes 各层 chunk 数一致、值为正、高码率层均值更大
-- seed 相同选中同一文件、内容一致
-- seed 不同选中不同文件
+Test coverage (27 tests):
+
+| Area | What is verified |
+|---|---|
+| `list_trace_sets` | Both suites return expected collections; result is sorted |
+| `list_trace_files` | Returns `Path` objects; sorted by name; stable across calls; test split works; all-only sets use root dir |
+| `load_trace_file` | Two-column parse; timestamps ≥ 0; bandwidths > 0; `path` stored correctly; every file in FCC-16/train loads without error |
+| Bulk loading | All files in a set load into parallel lists with equal length |
+| `load_video_sizes` | All 6 levels present; all sizes positive; chunk count consistent across levels; higher bitrate → larger average chunk |
+| Reproducibility | Same seed → same file path and content; different seeds → different files; `reset(seed=X)` resets to identical first observation |
 
 ---
 
-## 项目结构
+## Project Structure
 
 ```
 nettrace/
 ├── nettrace/
-│   ├── __init__.py       # 对外公共 API
-│   ├── core.py           # Trace、list_trace_sets、load_trace_file 等实现
-│   ├── utils.py          # DATA_ROOT 路径常量
+│   ├── __init__.py       # Public API exports
+│   ├── core.py           # Trace, list_trace_sets, load_trace_file, sample_trace, load_video_sizes
+│   ├── utils.py          # DATA_ROOT constant
 │   └── datasets/
 │       ├── trace/
 │       │   ├── ABRBench-3G/   (FCC-16, FCC-18, HSR, Oboe, Puffer-21, Puffer-22)
@@ -216,8 +237,8 @@ nettrace/
 │           ├── big_buck_bunny/
 │           └── envivio_3g/
 ├── examples/
-│   ├── quickstart.py     # 最简使用示例
-│   └── env.py            # ABR gym 环境示例（需要 gymnasium + numpy）
+│   ├── quickstart.py     # Minimal usage demo
+│   └── env.py            # ABR Gym environment demo (requires gymnasium + numpy)
 ├── tests/
 │   ├── test_reproducible_sampling.py
 │   └── test_env_dependencies.py
