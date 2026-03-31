@@ -10,12 +10,7 @@ def main() -> None:
         sets_ = list_trace_sets(suite)  # type: ignore[arg-type]
         print(f"{suite}: {len(sets_)} trace sets")
 
-    trace = sample_trace(
-        "SolisWi-Fi",
-        suite="ABRBench-4G+",
-        split="train",
-        seed=123,
-    )
+    trace = sample_trace("SolisWi-Fi", suite="ABRBench-4G+", split="train", seed=123)
     print(f"sampled trace file: {trace.path.name}")
     print(f"points: {len(trace.times)}")
     print(f"first 3 bw: {trace.bandwidths[:3]}")
@@ -27,4 +22,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

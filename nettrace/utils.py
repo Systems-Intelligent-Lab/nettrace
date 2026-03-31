@@ -3,6 +3,7 @@ from pathlib import Path
 # 获取包安装后的数据集绝对路径
 DATA_ROOT = Path(__file__).parent / "datasets"
 
+
 def get_trace_root() -> Path:
     return DATA_ROOT / "trace"
 

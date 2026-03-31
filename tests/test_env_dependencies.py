@@ -10,12 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from nettrace import (
-    list_trace_sets,
-    list_trace_files,
-    load_trace_file,
-    load_video_sizes,
-)
+from nettrace import list_trace_sets, list_trace_files, load_trace_file, load_video_sizes
 from nettrace.utils import DATA_ROOT
 
 _ALL_ONLY = {"HSR", "Ghent", "Lab"}
@@ -24,6 +19,7 @@ VALID_VIDEOS = ("big_buck_bunny", "envivio_3g")
 
 
 # ── list_trace_sets ──────────────────────────────────────────────────────────
+
 
 def test_list_trace_sets_3g():
     sets = list_trace_sets("ABRBench-3G")
@@ -45,6 +41,7 @@ def test_list_trace_sets_returns_sorted():
 
 
 # ── list_trace_files ─────────────────────────────────────────────────────────
+
 
 def test_list_trace_files_returns_paths():
     files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
@@ -81,16 +78,14 @@ def test_list_trace_files_test_split():
 def test_all_only_sets_use_root_dir(trace_set: str):
     suite = "ABRBench-3G" if trace_set == "HSR" else "ABRBench-4G+"
     root = DATA_ROOT / "trace" / suite / trace_set
-    direct_files = sorted(
-        [p for p in root.iterdir() if p.is_file() and not p.name.startswith(".")],
-        key=lambda p: p.name,
-    )
+    direct_files = sorted([p for p in root.iterdir() if p.is_file() and not p.name.startswith(".")], key=lambda p: p.name)
     print(f"\n  {trace_set} 根目录直接包含 {len(direct_files)} 个 trace 文件")
     print(f"  前2个: {[p.name for p in direct_files[:2]]}")
     assert len(direct_files) > 0
 
 
 # ── load_trace_file ──────────────────────────────────────────────────────────
+
 
 def test_load_trace_file_two_columns():
     files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
@@ -142,6 +137,7 @@ def test_load_all_traces_in_set():
 
 # ── env needs: load all files as parallel lists ──────────────────────────────
 
+
 def test_bulk_load_returns_parallel_lists():
     """模拟 VideoStreamingEnv 批量加载所有 trace 为 time_sequences / bandwidth_sequences。"""
     files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
@@ -171,6 +167,7 @@ def test_bulk_load_order_is_deterministic():
 
 
 # ── load_video_sizes ─────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize("video_type", VALID_VIDEOS)
 def test_load_video_sizes_all_levels(video_type: str):
