@@ -16,7 +16,7 @@ _3G_SETS: frozenset[str] = frozenset({"FCC-16", "FCC-18", "HSR", "Oboe", "Puffer
 _ALL_ONLY_SETS: frozenset[str] = frozenset({"HSR", "Ghent", "Lab"})
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class Trace:
     """A single network trace.
 

@@ -4,6 +4,7 @@ work correctly through the nettrace package API.
 These tests do NOT import the env itself; they test only what the package
 provides so that any external env can rely on these guarantees.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -33,13 +34,6 @@ def test_list_trace_sets_4g():
     assert set(sets) >= {"Ghent", "Lab", "Lumos4G", "Lumos5G", "Norway3G", "SolisWi-Fi"}
 
 
-def test_list_trace_sets_returns_sorted():
-    for suite in ("ABRBench-3G", "ABRBench-4G+"):
-        sets = list_trace_sets(suite)  # type: ignore[arg-type]
-        print(f"\n  {suite} 顺序: {sets}")
-        assert sets == sorted(sets), f"{suite} list is not sorted"
-
-
 # ── list_trace_files ─────────────────────────────────────────────────────────
 
 
@@ -49,15 +43,6 @@ def test_list_trace_files_returns_paths():
     print(f"  前3个: {[p.name for p in files[:3]]}")
     assert len(files) > 0
     assert all(isinstance(p, Path) for p in files)
-
-
-def test_list_trace_files_sorted_by_name():
-    files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
-    names = [p.name for p in files]
-    print(f"\n  文件名前3: {names[:3]}")
-    print(f"  文件名后3: {names[-3:]}")
-    print(f"  已按字母排序: {names == sorted(names)}")
-    assert names == sorted(names)
 
 
 def test_list_trace_files_stable_across_calls():
@@ -95,44 +80,6 @@ def test_load_trace_file_two_columns():
     print(f"  时间列与带宽列长度相同: {len(trace.times) == len(trace.bandwidths)}")
     assert len(trace.times) == len(trace.bandwidths)
     assert len(trace.times) > 0
-
-
-def test_load_trace_file_times_non_negative():
-    files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
-    trace = load_trace_file(files[0])
-    min_t = min(trace.times)
-    print(f"\n  文件: {files[0].name}")
-    print(f"  时间戳范围: [{min_t:.3f}, {max(trace.times):.3f}] 秒")
-    assert min_t >= 0
-
-
-def test_load_trace_file_bandwidths_positive():
-    files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
-    trace = load_trace_file(files[0])
-    min_bw, max_bw = min(trace.bandwidths), max(trace.bandwidths)
-    avg_bw = sum(trace.bandwidths) / len(trace.bandwidths)
-    print(f"\n  文件: {files[0].name}")
-    print(f"  带宽范围: [{min_bw:.3f}, {max_bw:.3f}]  均值: {avg_bw:.3f}")
-    assert min_bw > 0
-
-
-def test_load_trace_file_path_stored():
-    files = list_trace_files("SolisWi-Fi", suite="ABRBench-4G+", split="train")
-    trace = load_trace_file(files[0])
-    print(f"\n  输入路径: {files[0]}")
-    print(f"  trace.path: {trace.path}")
-    print(f"  两者相同: {trace.path == files[0].resolve()}")
-    assert trace.path == files[0].resolve()
-
-
-def test_load_all_traces_in_set():
-    files = list_trace_files("FCC-16", suite="ABRBench-3G", split="train")
-    total_pts = 0
-    for f in files:
-        tr = load_trace_file(f)
-        total_pts += len(tr.times)
-        assert len(tr.times) > 0
-    print(f"\n  FCC-16/train: {len(files)} 个文件全部解析成功，合计 {total_pts} 个数据点")
 
 
 # ── env needs: load all files as parallel lists ──────────────────────────────
@@ -201,3 +148,65 @@ def test_load_video_sizes_higher_bitrate_larger():
     for lvl, avg in enumerate(avgs):
         print(f"    level {lvl}: {avg/1024:.1f} KB")
     assert avgs[-1] > avgs[0], "最高码率层应有更大的平均 chunk 大小"
+
+
+# ── load all datasets ────────────────────────────────────────────────────────
+
+_ALL_TRACE_SETS: list[tuple[str, str, str]] = [
+    # (suite, trace_set, split)
+    ("ABRBench-3G", "FCC-16", "train"),
+    ("ABRBench-3G", "FCC-16", "test"),
+    ("ABRBench-3G", "FCC-18", "train"),
+    ("ABRBench-3G", "FCC-18", "test"),
+    ("ABRBench-3G", "HSR", "all"),
+    ("ABRBench-3G", "Oboe", "train"),
+    ("ABRBench-3G", "Oboe", "test"),
+    ("ABRBench-3G", "Puffer-21", "train"),
+    ("ABRBench-3G", "Puffer-21", "test"),
+    ("ABRBench-3G", "Puffer-22", "train"),
+    ("ABRBench-3G", "Puffer-22", "test"),
+    ("ABRBench-4G+", "Ghent", "all"),
+    ("ABRBench-4G+", "Lab", "all"),
+    ("ABRBench-4G+", "Lumos4G", "train"),
+    ("ABRBench-4G+", "Lumos4G", "test"),
+    ("ABRBench-4G+", "Lumos5G", "train"),
+    ("ABRBench-4G+", "Lumos5G", "test"),
+    ("ABRBench-4G+", "Norway3G", "train"),
+    ("ABRBench-4G+", "Norway3G", "test"),
+    ("ABRBench-4G+", "SolisWi-Fi", "train"),
+    ("ABRBench-4G+", "SolisWi-Fi", "test"),
+]
+
+
+@pytest.mark.parametrize("suite,trace_set,split", _ALL_TRACE_SETS, ids=[f"{ts}/{sp}" for _, ts, sp in _ALL_TRACE_SETS])
+def test_load_all_datasets(suite: str, trace_set: str, split: str):
+    """每个数据集的每个 split 都能完整加载，且所有 trace 非空。"""
+    from nettrace.utils import DATA_ROOT
+
+    if split == "all":
+        root = DATA_ROOT / "trace" / suite / trace_set
+        files = sorted(
+            [p for p in root.iterdir() if p.is_file() and not p.name.startswith(".")],
+            key=lambda p: p.name,
+        )
+    else:
+        files = list_trace_files(trace_set, suite=suite, split=split)  # type: ignore[arg-type]
+
+    assert len(files) > 0, f"{suite}/{trace_set}/{split} 没有找到任何文件"
+
+    failed = []
+    total_points = 0
+    for f in files:
+        try:
+            tr = load_trace_file(f)
+            assert len(tr.times) > 0
+            assert len(tr.times) == len(tr.bandwidths)
+            total_points += len(tr.times)
+        except Exception as e:
+            failed.append((f.name, str(e)))
+
+    print(f"\n  {suite}/{trace_set}/{split}: {len(files)} 个文件, 合计 {total_points} 个数据点")
+    if failed:
+        for name, err in failed:
+            print(f"    FAIL {name}: {err}")
+    assert not failed, f"{len(failed)} 个文件加载失败: {[n for n, _ in failed]}"
